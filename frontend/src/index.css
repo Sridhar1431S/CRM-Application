@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+/*
+  CRM Lite design tokens.
+
+  Palette rationale (per assignment: "Modern SaaS, Linear/Stripe/HubSpot/
+  Salesforce, minimal, professional, rounded cards, subtle shadows, white
+  background, blue primary"):
+
+  - Primary is a vivid indigo-blue (#3358F4) rather than a generic Tailwind
+    "blue-600" -- distinct enough to feel branded, familiar enough to read
+    as trustworthy/enterprise (the same emotional register as Linear/Stripe).
+  - Neutrals lean slightly cool (slate) instead of true gray, which is what
+    gives Linear/Stripe-style UIs their "clean SaaS" feel instead of a flat
+    admin-template feel.
+  - Status colors are semantic and reused consistently everywhere a status
+    appears (customer status, lead status/priority, opportunity stage) so
+    the same color always means the same thing across the app.
+*/
+
+@theme {
+  /* Brand / primary */
+  --color-brand-50: #eef1ff;
+  --color-brand-100: #e0e5ff;
+  --color-brand-200: #c6cdff;
+  --color-brand-300: #a3aeff;
+  --color-brand-400: #7a86fb;
+  --color-brand-500: #5563f5;
+  --color-brand-600: #3358f4;
+  --color-brand-700: #2a41d8;
+  --color-brand-800: #2536ad;
+  --color-brand-900: #223189;
+
+  /* Neutrals (cool slate) */
+  --color-surface: #ffffff;
+  --color-canvas: #f7f8fb;
+  --color-border: #e6e8f0;
+  --color-border-strong: #d5d8e3;
+
+  --color-ink-900: #0f1424;
+  --color-ink-700: #333a52;
+  --color-ink-500: #656d85;
+  --color-ink-400: #8890a6;
+  --color-ink-300: #b3b9c9;
+
+  /* Semantic status colors -- used consistently across Customer/Lead/Opportunity */
+  --color-success-50: #ecfdf3;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-warning-50: #fffaeb;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --color-info-50: #eff6ff;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --shadow-card: 0 1px 2px 0 rgb(15 20 36 / 0.04), 0 1px 3px 0 rgb(15 20 36 / 0.06);
+  --shadow-card-hover: 0 2px 8px 0 rgb(15 20 36 / 0.08), 0 1px 3px 0 rgb(15 20 36 / 0.06);
+  --shadow-popover: 0 4px 16px 0 rgb(15 20 36 / 0.1), 0 2px 6px 0 rgb(15 20 36 / 0.06);
+
+  --radius-card: 0.75rem;
+}
+
+html.dark {
+  --color-surface: #0f172a;
+  --color-canvas: #020617;
+  --color-border: #1e293b;
+  --color-border-strong: #334155;
+
+  --color-ink-900: #f8fafc;
+  --color-ink-700: #cbd5e1;
+  --color-ink-500: #94a3b8;
+  --color-ink-400: #64748b;
+  --color-ink-300: #475569;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    background-color: var(--color-canvas);
+  }
+
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-color: var(--color-canvas);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 999px;
+    border: 2px solid var(--color-canvas);
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
