@@ -2,6 +2,28 @@
 
 A full-stack Customer Relationship Management application built for the Tika take-home assignment (Junior Full Stack Developer, Version D). Sales teams manage customers, leads, opportunities, and follow-up activities, with role-based access for Administrators and Sales Representatives.
 
+Screenshots: 
+
+Administrator: 
+
+<img width="1905" height="920" alt="Screenshot 2026-07-31 102407" src="https://github.com/user-attachments/assets/1b06e164-a552-45bc-baf6-97d49322236c" />
+<img width="1919" height="927" alt="Screenshot 2026-07-31 102423" src="https://github.com/user-attachments/assets/415d4ac6-ad84-479d-8aaa-588aee011e0f" />
+<img width="1918" height="927" alt="Screenshot 2026-07-31 102456" src="https://github.com/user-attachments/assets/b6f08c14-c5fb-4ec6-b9d7-487e5b288106" />
+<img width="1919" height="929" alt="Screenshot 2026-07-31 102516" src="https://github.com/user-attachments/assets/ed9c0155-534f-44fa-8f5e-967f35669de4" />
+<img width="1919" height="923" alt="Screenshot 2026-07-31 102536" src="https://github.com/user-attachments/assets/cc2a11bc-1d6b-498f-b209-29bea315027a" />
+<img width="1915" height="930" alt="Screenshot 2026-07-31 102553" src="https://github.com/user-attachments/assets/b1f66f33-760e-4a2b-b151-a094891ff16c" />
+<img width="1919" height="929" alt="Screenshot 2026-07-31 102610" src="https://github.com/user-attachments/assets/bff1de35-7fff-4412-a988-838fee5f53d3" />
+<img width="1919" height="927" alt="Screenshot 2026-07-31 102632" src="https://github.com/user-attachments/assets/18561d6b-32fe-40a8-ac62-353361f230ff" />
+<img width="1919" height="934" alt="Screenshot 2026-07-31 102654" src="https://github.com/user-attachments/assets/7b0205cd-eb6a-4d8c-85a5-f5da5e441e17" />
+
+Sales Rep: 
+
+<img width="1919" height="922" alt="Screenshot 2026-07-31 102805" src="https://github.com/user-attachments/assets/1fa23d0b-318f-4660-99f4-d7fc6ba5f8e4" />
+<img width="1919" height="920" alt="Screenshot 2026-07-31 102843" src="https://github.com/user-attachments/assets/1488e030-5cb9-4459-b9eb-74a73f909f64" />
+<img width="1914" height="928" alt="Screenshot 2026-07-31 102820" src="https://github.com/user-attachments/assets/04c212c6-3deb-41c8-8664-995500aa7942" />
+
+
+
 **Stack:** Django REST Framework + PostgreSQL (backend) · React + TypeScript + Vite (frontend) · JWT authentication.
 
 ---
