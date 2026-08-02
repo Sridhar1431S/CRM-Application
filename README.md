@@ -61,7 +61,7 @@ CRM Lite lets a sales organization:
 - View role-specific **dashboards**: administrators see organization-wide KPIs and a live Progress Monitoring table; representatives see their own assigned work and today's follow-ups.
 - **Search, filter, sort, and paginate** every list view.
 
-No bonus features (Docker, CI, CSV import, unit tests, dark mode, etc.) are included unless explicitly requested — the brief is intentionally scoped to the core assignment, implemented to a high standard, per "we value thoughtful design decisions and code quality over feature quantity."
+No bonus features (Docker, CI, CSV import, unit tests, etc.) are included unless explicitly requested — the brief is intentionally scoped to the core assignment, implemented to a high standard, per "we value thoughtful design decisions and code quality over feature quantity."
 
 ## Technology stack
 
