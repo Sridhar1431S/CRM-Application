@@ -350,7 +350,7 @@ Full interactive API documentation (request/response schemas, try-it-out) is gen
 
 7. **Global exception handler + service-layer `BusinessRuleViolation`** (HTTP 422) separate business-rule failures from field-validation failures (HTTP 400) and from generic server errors (HTTP 500), so the frontend (and a future API consumer) can distinguish "your input is malformed" from "your input is valid but violates a business rule" from "something broke."
 
-8. **Bonus features scoped to zero by default**, per your instruction — every core requirement in the PDF is implemented in full; nothing beyond it (Docker, CI, unit tests, CSV import, dark mode, etc.) was added speculatively. Pagination/sorting/filtering, while also listed as "bonus," are implemented because they're separately mandated by the core spec's Search/Filtering/Sorting sections.
+8. **Bonus features scoped to zero by default**, per your instruction — every core requirement in the PDF is implemented in full; nothing beyond it (Docker, CI, unit tests, CSV import, etc.) was added speculatively. Pagination/sorting/filtering, while also listed as "bonus," are implemented because they're separately mandated by the core spec's Search/Filtering/Sorting sections.
 
 ## Assumptions
 
