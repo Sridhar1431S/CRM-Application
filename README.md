@@ -1,6 +1,6 @@
 # CRM Lite
 
-A full-stack Customer Relationship Management application built for the Tika take-home assignment (Junior Full Stack Developer, Version D). Sales teams manage customers, leads, opportunities, and follow-up activities, with role-based access for Administrators and Sales Representatives.
+A full-stack Customer Relationship Management application built for the Tika take-home assignment (Junior Full Stack Developer). Sales teams manage customers, leads, opportunities, and follow-up activities, with role-based access for Administrators and Sales Representatives.
 
 Screenshots: 
 
