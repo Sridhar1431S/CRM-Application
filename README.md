@@ -399,4 +399,4 @@ Given more time, the next additions (in priority order) would be:
 5. **Dashboard charts** (pipeline funnel, rep leaderboard) — the data (`/api/dashboard/admin`) already supports this; only the frontend visualization is missing.
 6. **Docker Compose** for one-command local setup (Postgres + backend + frontend).
 7. **CI pipeline** (GitHub Actions) running lint + tests on every PR.
-8. **Dark mode** and richer Settings/notification preferences.
+8. Richer Settings/notification preferences.
