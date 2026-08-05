@@ -13,6 +13,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
@@ -36,7 +37,7 @@ export default function OpportunitiesPage() {
     queryFn: () => salesRepsApi.list({ page_size: 100 }),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["opportunities", { page, search: debouncedSearch, stage, assignedRep, ordering }],
     queryFn: () => opportunitiesApi.list({ page, search: debouncedSearch, stage, assigned_rep: assignedRep, ordering }),
     placeholderData: (prev) => prev,
@@ -118,7 +119,9 @@ export default function OpportunitiesPage() {
       </div>
 
       <Card>
-        {!isLoading && data?.results.length === 0 ? (
+        {isError && !data ? (
+          <ErrorState title="Couldn't load opportunities" error={error} onRetry={() => refetch()} />
+        ) : !isLoading && data?.results.length === 0 ? (
           <EmptyState icon={TrendingUp} title="No opportunities found" description="Convert a lead to create your first opportunity." />
         ) : (
           <>

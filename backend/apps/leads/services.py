@@ -37,8 +37,8 @@ class LeadService:
 
         try:
             value_decimal = float(estimated_value)
-        except (TypeError, ValueError):
-            raise BusinessRuleViolation("Estimated value must be a number.")
+        except (TypeError, ValueError) as exc:
+            raise BusinessRuleViolation("Estimated value must be a number.") from exc
         if value_decimal <= 0:
             raise BusinessRuleViolation("Opportunity value must be greater than zero.")
 

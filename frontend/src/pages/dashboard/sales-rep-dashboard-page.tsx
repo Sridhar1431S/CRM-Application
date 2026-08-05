@@ -7,18 +7,25 @@ import { KpiCard } from "@/components/shared/kpi-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
 export default function SalesRepDashboardPage() {
   const user = useAuthStore((s) => s.user);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["dashboard", "sales-rep"],
     queryFn: dashboardApi.salesRep,
   });
 
-  const { data: upcoming, isLoading: upcomingLoading } = useQuery({
+  const {
+    data: upcoming,
+    isLoading: upcomingLoading,
+    isError: upcomingIsError,
+    error: upcomingError,
+    refetch: refetchUpcoming,
+  } = useQuery({
     queryKey: ["followups", "upcoming"],
     queryFn: followupsApi.upcoming,
   });
@@ -29,6 +36,12 @@ export default function SalesRepDashboardPage() {
         <h2 className="text-lg font-semibold text-ink-900">Welcome back, {user?.name?.split(" ")[0]}</h2>
         <p className="text-sm text-ink-500">Here's what's on your plate today.</p>
       </div>
+
+      {isError && (
+        <Card>
+          <ErrorState title="Couldn't load your dashboard" error={error} onRetry={() => refetch()} />
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
@@ -60,6 +73,8 @@ export default function SalesRepDashboardPage() {
             <div className="px-5 pb-5">
               <Skeleton className="h-40 w-full" />
             </div>
+          ) : upcomingIsError ? (
+            <ErrorState title="Couldn't load follow-ups" error={upcomingError} onRetry={() => refetchUpcoming()} />
           ) : !upcoming?.length ? (
             <EmptyState title="Nothing upcoming" description="You're all caught up on follow-ups." />
           ) : (

@@ -13,6 +13,7 @@ import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { useToast } from "@/components/ui/toast";
 import { extractErrorMessage } from "@/lib/api-client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -46,7 +47,7 @@ export default function LeadsPage() {
     queryFn: () => salesRepsApi.list({ page_size: 100 }),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["leads", { page, search: debouncedSearch, status, priority, assignedRep, ordering }],
     queryFn: () => leadsApi.list({ page, search: debouncedSearch, status, priority, assigned_rep: assignedRep, ordering }),
     placeholderData: (prev) => prev,
@@ -209,7 +210,9 @@ export default function LeadsPage() {
       </div>
 
       <Card>
-        {!isLoading && data?.results.length === 0 ? (
+        {isError && !data ? (
+          <ErrorState title="Couldn't load leads" error={error} onRetry={() => refetch()} />
+        ) : !isLoading && data?.results.length === 0 ? (
           <EmptyState icon={Target} title="No leads found" description="Try adjusting your search or filters." />
         ) : (
           <>

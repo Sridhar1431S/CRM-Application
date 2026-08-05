@@ -12,6 +12,7 @@ import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { useToast } from "@/components/ui/toast";
 import { extractErrorMessage } from "@/lib/api-client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -34,7 +35,7 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["customers", { page, search: debouncedSearch, status, ordering }],
     queryFn: () => customersApi.list({ page, search: debouncedSearch, status, ordering }),
     placeholderData: (prev) => prev,
@@ -148,7 +149,9 @@ export default function CustomersPage() {
       </div>
 
       <Card>
-        {!isLoading && data?.results.length === 0 ? (
+        {isError && !data ? (
+          <ErrorState title="Couldn't load customers" error={error} onRetry={() => refetch()} />
+        ) : !isLoading && data?.results.length === 0 ? (
           <EmptyState
             icon={Building2}
             title="No customers found"

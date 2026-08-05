@@ -1,4 +1,5 @@
 import * as React from "react";
+import axios from "axios";
 import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -22,8 +23,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         useAuthStore.getState().setAccessToken(access);
         const user = await authApi.me();
         if (!cancelled) setAuth(user, access);
-      } catch {
-        // No valid session -- that's fine, ProtectedRoute will redirect to /login.
+      } catch (error) {
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+        if (status !== 401 && status !== 403) {
+          // Not an expired session: the API is unreachable or erroring, which
+          // would otherwise look identical to "logged out".
+          console.error("Session bootstrap failed", error);
+        }
       } finally {
         if (!cancelled) setInitializing(false);
       }

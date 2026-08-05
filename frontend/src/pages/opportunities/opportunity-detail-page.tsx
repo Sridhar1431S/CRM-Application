@@ -12,6 +12,7 @@ import { StageBadge } from "@/components/ui/badge";
 import { Select, Textarea, Label, Input, FieldError } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { useToast } from "@/components/ui/toast";
 import { extractErrorMessage } from "@/lib/api-client";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
@@ -33,13 +34,19 @@ export default function OpportunityDetailPage() {
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
 
-  const { data: opportunity, isLoading } = useQuery({
+  const { data: opportunity, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["opportunities", id],
     queryFn: () => opportunitiesApi.get(id!),
     enabled: !!id,
   });
 
-  const { data: followups, isLoading: followupsLoading } = useQuery({
+  const {
+    data: followups,
+    isLoading: followupsLoading,
+    isError: followupsError,
+    error: followupsErrorObject,
+    refetch: refetchFollowups,
+  } = useQuery({
     queryKey: ["followups", id],
     queryFn: () => followupsApi.listForOpportunity(id!),
     enabled: !!id,
@@ -90,6 +97,10 @@ export default function OpportunityDetailPage() {
         <Skeleton className="h-64 w-full" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <ErrorState title="Couldn't load this opportunity" error={error} onRetry={() => refetch()} />;
   }
 
   if (!opportunity) {
@@ -208,6 +219,12 @@ export default function OpportunityDetailPage() {
 
           {followupsLoading ? (
             <Skeleton className="h-32 w-full" />
+          ) : followupsError ? (
+            <ErrorState
+              title="Couldn't load follow-up history"
+              error={followupsErrorObject}
+              onRetry={() => refetchFollowups()}
+            />
           ) : !followups?.results.length ? (
             <EmptyState title="No follow-ups yet" description="Log the first interaction with this opportunity." />
           ) : (

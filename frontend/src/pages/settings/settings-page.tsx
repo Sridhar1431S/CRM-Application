@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { extractErrorMessage } from "@/lib/api-client";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -14,10 +15,18 @@ export default function SettingsPage() {
 
   const logoutMutation = useMutation({
     mutationFn: authApi.logout,
-    onSettled: () => {
+    onSettled: (_data, error) => {
       clearAuth();
       navigate("/login", { replace: true });
-      toast({ title: "Logged out", variant: "info" });
+      if (error) {
+        toast({
+          title: "Signed out on this device only",
+          description: `${extractErrorMessage(error)} Your session may still be active on the server.`,
+          variant: "error",
+        });
+      } else {
+        toast({ title: "Logged out", variant: "info" });
+      }
     },
   });
 
