@@ -1,15 +1,14 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import status
 from rest_framework.response import Response
 
 from apps.customers.models import Customer
 from apps.customers.permissions import CustomerPermission
 from apps.customers.serializers import CustomerListSerializer, CustomerSerializer
 from apps.customers.services import CustomerService
-from core.pagination import StandardResultsSetPagination
+from core.views import BaseModelViewSet
 
 
-class CustomerViewSet(viewsets.ModelViewSet):
+class CustomerViewSet(BaseModelViewSet):
     """
     /api/customers/
 
@@ -20,8 +19,6 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     permission_classes = [CustomerPermission]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status"]
     search_fields = ["company_name", "contact_person", "email"]
     ordering_fields = ["company_name", "created_at", "status"]

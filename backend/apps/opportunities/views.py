@@ -1,5 +1,3 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -7,10 +5,10 @@ from apps.opportunities.models import Opportunity
 from apps.opportunities.permissions import OpportunityPermission
 from apps.opportunities.serializers import OpportunitySerializer, OpportunityStageUpdateSerializer
 from apps.opportunities.services import OpportunityService
-from core.pagination import StandardResultsSetPagination
+from core.views import BaseModelViewSet
 
 
-class OpportunityViewSet(viewsets.ModelViewSet):
+class OpportunityViewSet(BaseModelViewSet):
     """
     /api/opportunities/
 
@@ -22,8 +20,6 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 
     serializer_class = OpportunitySerializer
     permission_classes = [OpportunityPermission]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["stage", "assigned_rep", "customer"]
     search_fields = ["customer__company_name", "customer__contact_person", "assigned_rep__name"]
     ordering_fields = ["estimated_value", "expected_closing_date", "created_at", "stage"]
@@ -31,10 +27,7 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Opportunity.objects.select_related("customer", "assigned_rep")
-        user = self.request.user
-        if user.is_authenticated and user.is_sales_rep:
-            return qs.filter(assigned_rep=user)
-        return qs
+        return self.scope_to_assigned_rep(qs)
 
     @action(detail=True, methods=["patch"], url_path="stage")
     def update_stage(self, request, pk=None):

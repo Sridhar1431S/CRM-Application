@@ -2,22 +2,22 @@ import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { opportunitiesApi } from "@/api/opportunities";
 import { customersApi } from "@/api/customers";
 import { salesRepsApi } from "@/api/sales-reps";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Select } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityFormMutation } from "@/lib/use-entity-mutation";
+import { estimatedValueField, expectedClosingDateField, requiredField } from "@/lib/validation";
 import type { Opportunity } from "@/types";
 
 const schema = z.object({
-  customer: z.string().min(1, "Customer is required"),
-  assigned_rep: z.string().min(1, "Assigned representative is required"),
-  estimated_value: z.coerce.number().positive("Value must be greater than zero"),
-  expected_closing_date: z.string().min(1, "Expected closing date is required"),
+  customer: requiredField("Customer"),
+  assigned_rep: requiredField("Assigned representative"),
+  estimated_value: estimatedValueField,
+  expected_closing_date: expectedClosingDateField,
   stage: z.enum(["qualification", "proposal", "negotiation", "won", "lost"]),
 });
 
@@ -31,8 +31,6 @@ interface OpportunityFormDialogProps {
 
 export function OpportunityFormDialog({ open, onOpenChange, opportunity }: OpportunityFormDialogProps) {
   const isEdit = !!opportunity;
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: customers } = useQuery({
     queryKey: ["customers", "all-picker"],
@@ -75,20 +73,15 @@ export function OpportunityFormDialog({ open, onOpenChange, opportunity }: Oppor
     }
   }, [open, opportunity, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: FormValues) => {
+  const mutation = useEntityFormMutation<FormValues, Opportunity>({
+    isEdit,
+    entityLabel: "opportunity",
+    resourceKey: "opportunities",
+    save: (data) => {
       const payload = { ...data, estimated_value: String(data.estimated_value) };
       return isEdit ? opportunitiesApi.update(opportunity!.id, payload) : opportunitiesApi.create(payload as never);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: isEdit ? "Opportunity updated" : "Opportunity created", variant: "success" });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't save opportunity", description: extractErrorMessage(error), variant: "error" });
-    },
+    onSaved: () => onOpenChange(false),
   });
 
   return (

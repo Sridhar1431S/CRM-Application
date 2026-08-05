@@ -1,5 +1,7 @@
 from rest_framework.permissions import BasePermission
 
+from core.access import is_admin_or_assigned_rep
+
 
 class FollowUpPermission(BasePermission):
     """
@@ -13,6 +15,4 @@ class FollowUpPermission(BasePermission):
         return bool(request.user and request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        if request.user.is_admin:
-            return True
-        return obj.opportunity.assigned_rep_id == request.user.id
+        return is_admin_or_assigned_rep(request.user, obj.opportunity)

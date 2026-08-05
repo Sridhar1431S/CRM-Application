@@ -1,7 +1,7 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from core.permissions import AssignedRepObjectPermissionMixin, RoleBasedPermission
 
 
-class LeadPermission(BasePermission):
+class LeadPermission(AssignedRepObjectPermissionMixin, RoleBasedPermission):
     """
     Administrators have full CRUD + assign/convert. Sales representatives
     may view leads (scoped to their own assignments by the queryset in the
@@ -10,19 +10,8 @@ class LeadPermission(BasePermission):
     per the assignment spec.
     """
 
-    ADMIN_ONLY_ACTIONS = {"create", "destroy", "assign", "convert"}
+    admin_only_actions = frozenset({"create", "destroy", "assign", "convert"})
 
-    def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
-            return False
-        if getattr(view, "action", None) in self.ADMIN_ONLY_ACTIONS:
-            return request.user.is_admin
-        return True
-
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_admin:
-            return True
-        if request.method in SAFE_METHODS:
-            return obj.assigned_rep_id == request.user.id
+    def has_write_object_permission(self, request, view, obj):
         # Sales reps may only update (status/notes) their own leads.
         return obj.assigned_rep_id == request.user.id

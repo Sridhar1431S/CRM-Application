@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, UserPlus, ArrowRightCircle, Target } from "lucide-react";
 import { leadsApi } from "@/api/leads";
 import { salesRepsApi } from "@/api/sales-reps";
@@ -13,9 +13,8 @@ import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
+import { useListControls } from "@/lib/use-list-controls";
 import { useAuthStore } from "@/store/auth-store";
 import { LeadFormDialog } from "@/pages/leads/lead-form-dialog";
 import { LeadAssignDialog } from "@/pages/leads/lead-assign-dialog";
@@ -24,16 +23,11 @@ import type { Lead } from "@/types";
 
 export default function LeadsPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const { page, setPage, search, setSearch, debouncedSearch, ordering, setOrdering } = useListControls();
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [assignedRep, setAssignedRep] = useState("");
-  const [ordering, setOrdering] = useState("-created_at");
-  const debouncedSearch = useDebouncedValue(search);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -52,17 +46,12 @@ export default function LeadsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => leadsApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: "Lead deleted", variant: "success" });
-      setDeletingLead(null);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't delete lead", description: extractErrorMessage(error), variant: "error" });
-    },
+  const deleteMutation = useEntityMutation<unknown, string>({
+    mutationFn: (id) => leadsApi.remove(id),
+    invalidateKeys: [["leads"], ["dashboard"]],
+    successTitle: "Lead deleted",
+    errorTitle: "Couldn't delete lead",
+    onSuccess: () => setDeletingLead(null),
   });
 
   const columns: DataTableColumn<Lead>[] = [
@@ -219,10 +208,7 @@ export default function LeadsPage() {
               rowKey={(l) => l.id}
               isLoading={isLoading}
               ordering={ordering}
-              onOrderingChange={(o) => {
-                setOrdering(o);
-                setPage(1);
-              }}
+              onOrderingChange={setOrdering}
             />
             {data && (
               <Pagination

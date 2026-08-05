@@ -1,15 +1,14 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.sales_reps.permissions import SalesRepPermission
 from apps.sales_reps.serializers import SalesRepCreateSerializer, SalesRepSerializer
 from apps.users.models import User
-from core.pagination import StandardResultsSetPagination
+from core.views import BaseModelViewSet
 
 
-class SalesRepViewSet(viewsets.ModelViewSet):
+class SalesRepViewSet(BaseModelViewSet):
     """
     /api/sales-reps/
 
@@ -21,8 +20,6 @@ class SalesRepViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.filter(role=User.Role.SALES_REP)
     permission_classes = [SalesRepPermission]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["is_active"]
     search_fields = ["name", "email"]
     ordering_fields = ["name", "created_at"]

@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Building2, CalendarDays, IndianRupee, User as UserIcon } from "lucide-react";
 import { opportunitiesApi } from "@/api/opportunities";
 import { followupsApi } from "@/api/followups";
@@ -12,14 +12,14 @@ import { StageBadge } from "@/components/ui/badge";
 import { Select, Textarea, Label, Input, FieldError } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
+import { requiredField } from "@/lib/validation";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
-import type { OpportunityStage } from "@/types";
+import type { FollowUp, Opportunity, OpportunityStage } from "@/types";
 
 const followupSchema = z.object({
-  note: z.string().min(1, "Note is required"),
+  note: requiredField("Note"),
   next_followup_date: z.string().optional(),
 });
 type FollowUpFormValues = z.infer<typeof followupSchema>;
@@ -29,8 +29,6 @@ const STAGES: OpportunityStage[] = ["qualification", "proposal", "negotiation", 
 export default function OpportunityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
 
   const { data: opportunity, isLoading } = useQuery({
@@ -48,16 +46,11 @@ export default function OpportunityDetailPage() {
   const canManage = user?.role === "admin" || opportunity?.assigned_rep === user?.id;
   const isTerminal = opportunity?.stage === "won" || opportunity?.stage === "lost";
 
-  const stageMutation = useMutation({
-    mutationFn: (stage: OpportunityStage) => opportunitiesApi.updateStage(id!, stage),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: "Stage updated", variant: "success" });
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't update stage", description: extractErrorMessage(error), variant: "error" });
-    },
+  const stageMutation = useEntityMutation<Opportunity, OpportunityStage>({
+    mutationFn: (stage) => opportunitiesApi.updateStage(id!, stage),
+    invalidateKeys: [["opportunities"], ["dashboard"]],
+    successTitle: "Stage updated",
+    errorTitle: "Couldn't update stage",
   });
 
   const {
@@ -67,19 +60,13 @@ export default function OpportunityDetailPage() {
     formState: { errors },
   } = useForm<FollowUpFormValues>({ resolver: zodResolver(followupSchema) });
 
-  const followupMutation = useMutation({
-    mutationFn: (data: FollowUpFormValues) =>
+  const followupMutation = useEntityMutation<FollowUp, FollowUpFormValues>({
+    mutationFn: (data) =>
       followupsApi.create(id!, { note: data.note, next_followup_date: data.next_followup_date || null }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["followups", id] });
-      queryClient.invalidateQueries({ queryKey: ["followups", "upcoming"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: "Follow-up logged", variant: "success" });
-      reset();
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't log follow-up", description: extractErrorMessage(error), variant: "error" });
-    },
+    invalidateKeys: [["followups", id], ["followups", "upcoming"], ["dashboard"]],
+    successTitle: "Follow-up logged",
+    errorTitle: "Couldn't log follow-up",
+    onSuccess: () => reset(),
   });
 
   if (isLoading) {

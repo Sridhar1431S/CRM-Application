@@ -1,19 +1,18 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { leadsApi } from "@/api/leads";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
-import type { Lead } from "@/types";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
+import { estimatedValueField, expectedClosingDateField } from "@/lib/validation";
+import type { Lead, Opportunity } from "@/types";
 
 const schema = z.object({
-  estimated_value: z.coerce.number().positive("Value must be greater than zero"),
-  expected_closing_date: z.string().min(1, "Expected closing date is required"),
+  estimated_value: estimatedValueField,
+  expected_closing_date: expectedClosingDateField,
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -27,8 +26,6 @@ export function LeadConvertDialog({
   onOpenChange: (open: boolean) => void;
   lead: Lead | null;
 }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const {
@@ -38,23 +35,19 @@ export function LeadConvertDialog({
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const mutation = useMutation({
-    mutationFn: (data: FormValues) =>
+  const mutation = useEntityMutation<Opportunity, FormValues>({
+    mutationFn: (data) =>
       leadsApi.convert(lead!.id, {
         estimated_value: String(data.estimated_value),
         expected_closing_date: data.expected_closing_date,
       }),
+    invalidateKeys: [["leads"], ["opportunities"], ["dashboard"]],
+    successTitle: "Lead converted to opportunity",
+    errorTitle: "Couldn't convert lead",
     onSuccess: (opportunity) => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: "Lead converted to opportunity", variant: "success" });
       onOpenChange(false);
       reset();
       navigate(`/opportunities/${opportunity.id}`);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't convert lead", description: extractErrorMessage(error), variant: "error" });
     },
   });
 

@@ -2,23 +2,19 @@ import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { customersApi } from "@/api/customers";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Select } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityFormMutation } from "@/lib/use-entity-mutation";
+import { emailField, phoneNumberField, requiredField } from "@/lib/validation";
 import type { Customer } from "@/types";
 
 const schema = z.object({
-  company_name: z.string().min(1, "Company name is required"),
-  contact_person: z.string().min(1, "Contact person is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
-  phone_number: z
-    .string()
-    .min(7, "Enter a valid phone number")
-    .regex(/^\+?[0-9\s\-()]{7,20}$/, "Enter a valid phone number"),
+  company_name: requiredField("Company name"),
+  contact_person: requiredField("Contact person"),
+  email: emailField,
+  phone_number: phoneNumberField,
   industry: z.string().optional(),
   status: z.enum(["prospect", "active", "inactive"]),
 });
@@ -33,8 +29,6 @@ interface CustomerFormDialogProps {
 
 export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
   const isEdit = !!customer;
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const {
     register,
@@ -64,18 +58,12 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     }
   }, [open, customer, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: FormValues) =>
-      isEdit ? customersApi.update(customer!.id, data) : customersApi.create(data as Customer),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: isEdit ? "Customer updated" : "Customer created", variant: "success" });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't save customer", description: extractErrorMessage(error), variant: "error" });
-    },
+  const mutation = useEntityFormMutation<FormValues, Customer>({
+    isEdit,
+    entityLabel: "customer",
+    resourceKey: "customers",
+    save: (data) => (isEdit ? customersApi.update(customer!.id, data) : customersApi.create(data as Customer)),
+    onSaved: () => onOpenChange(false),
   });
 
   return (

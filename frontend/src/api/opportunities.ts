@@ -1,22 +1,19 @@
 import { apiClient } from "@/lib/api-client";
-import { toQueryParams, type ListParams } from "@/api/types";
-import type { Opportunity, OpportunityStage, Paginated } from "@/types";
+import { createResourceApi } from "@/api/resource";
+import type { Opportunity, OpportunityStage } from "@/types";
 
 export type OpportunityInput = Omit<
   Opportunity,
   "id" | "customer_detail" | "assigned_rep_detail" | "created_at" | "updated_at"
 >;
 
+const resource = createResourceApi<Opportunity, OpportunityInput>("opportunities");
+
 export const opportunitiesApi = {
-  list: (params?: ListParams) =>
-    apiClient.get<Paginated<Opportunity>>("/opportunities/", { params: toQueryParams(params) }).then((r) => r.data),
-
-  get: (id: string) => apiClient.get<Opportunity>(`/opportunities/${id}/`).then((r) => r.data),
-
-  create: (data: OpportunityInput) => apiClient.post<Opportunity>("/opportunities/", data).then((r) => r.data),
-
-  update: (id: string, data: Partial<OpportunityInput>) =>
-    apiClient.put<Opportunity>(`/opportunities/${id}/`, data).then((r) => r.data),
+  list: resource.list,
+  get: resource.get,
+  create: resource.create,
+  update: resource.update,
 
   updateStage: (id: string, stage: OpportunityStage) =>
     apiClient.patch<Opportunity>(`/opportunities/${id}/stage/`, { stage }).then((r) => r.data),

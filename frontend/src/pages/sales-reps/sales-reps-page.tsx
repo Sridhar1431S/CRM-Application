@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Pencil, UserX, UserCheck, UserCog } from "lucide-react";
 import { salesRepsApi } from "@/api/sales-reps";
 import { Button } from "@/components/ui/button";
@@ -10,20 +10,14 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBar } from "@/components/shared/search-bar";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
+import { useListControls } from "@/lib/use-list-controls";
 import { initials, formatDate } from "@/lib/utils";
 import { SalesRepFormDialog } from "@/pages/sales-reps/sales-rep-form-dialog";
 import type { User } from "@/types";
 
 export default function SalesRepsPage() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
+  const { page, setPage, search, setSearch, debouncedSearch } = useListControls();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingRep, setEditingRep] = useState<User | null>(null);
@@ -35,17 +29,12 @@ export default function SalesRepsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const toggleMutation = useMutation({
-    mutationFn: (rep: User) => (rep.is_active ? salesRepsApi.disable(rep.id) : salesRepsApi.enable(rep.id)),
-    onSuccess: (_, rep) => {
-      queryClient.invalidateQueries({ queryKey: ["sales-reps"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: rep.is_active ? "Representative disabled" : "Representative enabled", variant: "success" });
-      setToggleTarget(null);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't update representative", description: extractErrorMessage(error), variant: "error" });
-    },
+  const toggleMutation = useEntityMutation<User, User>({
+    mutationFn: (rep) => (rep.is_active ? salesRepsApi.disable(rep.id) : salesRepsApi.enable(rep.id)),
+    invalidateKeys: [["sales-reps"], ["dashboard"]],
+    successTitle: (rep) => (rep.is_active ? "Representative disabled" : "Representative enabled"),
+    errorTitle: "Couldn't update representative",
+    onSuccess: () => setToggleTarget(null),
   });
 
   const columns: DataTableColumn<User>[] = [

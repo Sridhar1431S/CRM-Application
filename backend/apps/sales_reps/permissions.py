@@ -1,7 +1,7 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from core.permissions import RoleBasedPermission
 
 
-class SalesRepPermission(BasePermission):
+class SalesRepPermission(RoleBasedPermission):
     """
     Only administrators manage sales representatives (create/update/disable).
     Any authenticated user may list/view reps -- sales reps need this to see
@@ -9,9 +9,4 @@ class SalesRepPermission(BasePermission):
     dashboard's "active sales representatives" widget relies on it too.
     """
 
-    def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
-            return False
-        if request.method in SAFE_METHODS:
-            return True
-        return request.user.is_admin
+    admin_only_writes = True
