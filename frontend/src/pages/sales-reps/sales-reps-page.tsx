@@ -10,6 +10,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBar } from "@/components/shared/search-bar";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { useToast } from "@/components/ui/toast";
 import { extractErrorMessage } from "@/lib/api-client";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -29,7 +30,7 @@ export default function SalesRepsPage() {
   const [editingRep, setEditingRep] = useState<User | null>(null);
   const [toggleTarget, setToggleTarget] = useState<User | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["sales-reps", { page, search: debouncedSearch }],
     queryFn: () => salesRepsApi.list({ page, search: debouncedSearch }),
     placeholderData: (prev) => prev,
@@ -132,7 +133,9 @@ export default function SalesRepsPage() {
       <SearchBar value={search} onChange={setSearch} placeholder="Search by name or email" className="max-w-sm" />
 
       <Card>
-        {!isLoading && data?.results.length === 0 ? (
+        {isError && !data ? (
+          <ErrorState title="Couldn't load sales representatives" error={error} onRetry={() => refetch()} />
+        ) : !isLoading && data?.results.length === 0 ? (
           <EmptyState icon={UserCog} title="No sales representatives found" description="Add your first team member to get started." />
         ) : (
           <>

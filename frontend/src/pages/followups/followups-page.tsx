@@ -5,11 +5,12 @@ import { followupsApi } from "@/api/followups";
 import { Card } from "@/components/ui/card";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
 import { formatDate, initials } from "@/lib/utils";
 
 export default function FollowUpsPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["followups", "upcoming"],
     queryFn: followupsApi.upcoming,
   });
@@ -24,6 +25,8 @@ export default function FollowUpsPage() {
       <Card>
         {isLoading ? (
           <TableSkeleton cols={4} />
+        ) : isError ? (
+          <ErrorState title="Couldn't load follow-ups" error={error} onRetry={() => refetch()} />
         ) : !data?.length ? (
           <EmptyState
             icon={CalendarClock}

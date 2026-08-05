@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/shared/kpi-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { DataTable } from "@/components/shared/data-table";
 import { StageBadge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ const stageLabels: Record<OpportunityStage, string> = {
 const stageOrder: OpportunityStage[] = ["qualification", "proposal", "negotiation", "won", "lost"];
 
 export default function AdminDashboardPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["dashboard", "admin"],
     queryFn: dashboardApi.admin,
   });
@@ -73,6 +74,12 @@ export default function AdminDashboardPage() {
         <h2 className="text-lg font-semibold text-ink-900">Administrator Dashboard</h2>
         <p className="text-sm text-ink-500">A live snapshot of your team's pipeline.</p>
       </div>
+
+      {isError && (
+        <Card>
+          <ErrorState title="Couldn't load the dashboard" error={error} onRetry={() => refetch()} />
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {isLoading ? (
@@ -169,6 +176,8 @@ export default function AdminDashboardPage() {
             <div className="px-5 pb-5">
               <Skeleton className="h-64 w-full" />
             </div>
+          ) : isError ? (
+            <ErrorState title="Couldn't load progress monitoring" error={error} onRetry={() => refetch()} />
           ) : !rows.length ? (
             <EmptyState title="No opportunities yet" description="Convert a lead to see it appear here." />
           ) : (

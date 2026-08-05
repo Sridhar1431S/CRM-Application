@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -7,6 +9,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.serializers import LoginSerializer, RegisterSerializer, UserSerializer
+
+logger = logging.getLogger("crm_lite")
 
 REFRESH_COOKIE_NAME = "refresh_token"
 
@@ -110,7 +114,9 @@ class LogoutView(APIView):
             try:
                 RefreshToken(raw_token).blacklist()
             except TokenError:
-                pass
+                # Already expired/blacklisted: the cookie is cleared below either
+                # way, but the failure must not disappear without a trace.
+                logger.warning("Logout could not blacklist refresh token", exc_info=True)
 
         response = Response({"detail": "Logged out."}, status=status.HTTP_200_OK)
         response.delete_cookie(REFRESH_COOKIE_NAME, path="/api/auth/")

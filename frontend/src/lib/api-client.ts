@@ -28,9 +28,16 @@ async function refreshAccessToken(): Promise<string | null> {
     const newToken = response.data.access as string;
     useAuthStore.getState().setAccessToken(newToken);
     return newToken;
-  } catch {
-    useAuthStore.getState().clearAuth();
-    return null;
+  } catch (error) {
+    // A rejected refresh means the session is really gone; a network/server
+    // failure does not, so keep the session and let the caller surface it.
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 401 || status === 403) {
+      useAuthStore.getState().clearAuth();
+      return null;
+    }
+    console.error("Token refresh failed", error);
+    throw error;
   }
 }
 
@@ -50,7 +57,15 @@ apiClient.interceptors.response.use(
         });
       }
 
-      const newToken = await refreshPromise;
+      let newToken: string | null = null;
+      try {
+        newToken = await refreshPromise;
+      } catch {
+        // Refresh could not complete (offline / server down): surface the
+        // original error instead of bouncing the user to the login page.
+        return Promise.reject(error);
+      }
+
       if (newToken) {
         originalRequest.headers = originalRequest.headers ?? {};
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
