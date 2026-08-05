@@ -22,7 +22,6 @@ const registerSchema = z.object({
   email: z.string().min(1, "Email is required").email("Enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   password_confirm: z.string().min(1, "Confirm your password"),
-  role: z.enum(["admin", "sales_rep"]),
 }).refine((data) => data.password === data.password_confirm, {
   path: ["password_confirm"],
   message: "Passwords do not match",
@@ -45,12 +44,7 @@ export default function LoginPage() {
   }, [location.state]);
 
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
-  const registerForm = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: selectedRole ?? "sales_rep",
-    },
-  });
+  const registerForm = useForm<RegisterForm>({ resolver: zodResolver(registerSchema) });
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginForm) => authApi.login(data.email, data.password),
@@ -147,18 +141,6 @@ export default function LoginPage() {
                 <Label htmlFor="signup-email">Email address</Label>
                 <Input id="signup-email" type="email" placeholder="you@company.com" {...registerForm.register("email")} />
                 <FieldError message={registerForm.formState.errors.email?.message} />
-              </div>
-              <div>
-                <Label htmlFor="role">Role</Label>
-                <select
-                  id="role"
-                  className="flex h-9 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-ink-900 shadow-sm transition-all duration-200"
-                  {...registerForm.register("role")}
-                >
-                  <option value="sales_rep">Sales Rep</option>
-                  <option value="admin">Admin</option>
-                </select>
-                <FieldError message={registerForm.formState.errors.role?.message} />
               </div>
               <div>
                 <Label htmlFor="signup-password">Password</Label>

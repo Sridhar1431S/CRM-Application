@@ -7,7 +7,7 @@ export interface LoginResponse {
 }
 
 export const authApi = {
-  register: (payload: { name: string; email: string; password: string; password_confirm: string; role: "admin" | "sales_rep" }) =>
+  register: (payload: { name: string; email: string; password: string; password_confirm: string }) =>
     apiClient.post<{ user: User; detail: string }> ("/auth/register", payload).then((r) => r.data),
 
   login: (email: string, password: string) =>
