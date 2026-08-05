@@ -42,11 +42,12 @@ Sales Rep:
 5. [Database design / ER diagram](#database-design--er-diagram)
 6. [Setup instructions](#setup-instructions)
 7. [API documentation](#api-documentation)
-8. [Design decisions](#design-decisions)
-9. [Assumptions](#assumptions)
-10. [Validation rules](#validation-rules)
-11. [Security](#security)
-12. [Future improvements](#future-improvements)
+8. [Running the tests](#running-the-tests)
+9. [Design decisions](#design-decisions)
+10. [Assumptions](#assumptions)
+11. [Validation rules](#validation-rules)
+12. [Security](#security)
+13. [Future improvements](#future-improvements)
 
 ---
 
@@ -61,7 +62,7 @@ CRM Lite lets a sales organization:
 - View role-specific **dashboards**: administrators see organization-wide KPIs and a live Progress Monitoring table; representatives see their own assigned work and today's follow-ups.
 - **Search, filter, sort, and paginate** every list view.
 
-No bonus features (Docker, CI, CSV import, unit tests, etc.) are included unless explicitly requested — the brief is intentionally scoped to the core assignment, implemented to a high standard, per "we value thoughtful design decisions and code quality over feature quantity."
+Beyond the core assignment, the backend now ships an automated test suite (see [Running the tests](#running-the-tests)). Other bonus features (Docker, CI, CSV import, etc.) are not included unless explicitly requested — the brief is intentionally scoped to the core assignment, implemented to a high standard, per "we value thoughtful design decisions and code quality over feature quantity."
 
 ## Technology stack
 
@@ -93,7 +94,9 @@ crm-lite/
 │   │   ├── followups/             # Follow-up create/history, upcoming follow-ups
 │   │   └── dashboard/             # Read-only aggregation endpoints
 │   │       (each app: models.py, serializers.py, services.py, permissions.py, views.py, urls.py, admin.py)
+│   ├── tests/                     # shared test object builders
 │   ├── requirements.txt
+│   ├── requirements-dev.txt       # test tooling (coverage)
 │   └── manage.py
 ├── frontend/
 │   ├── src/
@@ -334,6 +337,30 @@ Full interactive API documentation (request/response schemas, try-it-out) is gen
 **Dashboard**
 `GET /api/dashboard/admin` (summary + progress monitoring table), `GET /api/dashboard/sales-rep`
 
+## Running the tests
+
+The backend ships a unit/integration suite (Django `TestCase`) covering the service layer's
+business rules, serializer validation, the role/permission matrix, and every API endpoint.
+It runs against a throwaway Postgres database created from the same `POSTGRES_*` settings
+used for development.
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python manage.py test
+```
+
+With coverage (configuration lives in `.coveragerc`):
+
+```bash
+coverage run manage.py test
+coverage report          # or: coverage html && open htmlcov/index.html
+```
+
+Tests live in a `tests/` package per app (`apps/<app>/tests/test_services.py`,
+`test_serializers.py`, `test_permissions.py`, `test_views.py`, `test_models.py`), with
+shared object builders in `backend/tests/factories.py`.
+
 ## Design decisions
 
 1. **Sales Representative is a `User`, not a separate table.** The spec's required fields (Name, Email, Status) are already on `User`. A `SalesRepProfile` would be a redundant 1:1 join for zero additional data — violates DRY for no benefit.
@@ -350,7 +377,7 @@ Full interactive API documentation (request/response schemas, try-it-out) is gen
 
 7. **Global exception handler + service-layer `BusinessRuleViolation`** (HTTP 422) separate business-rule failures from field-validation failures (HTTP 400) and from generic server errors (HTTP 500), so the frontend (and a future API consumer) can distinguish "your input is malformed" from "your input is valid but violates a business rule" from "something broke."
 
-8. **Bonus features scoped to zero by default**, per your instruction — every core requirement in the PDF is implemented in full; nothing beyond it (Docker, CI, unit tests, CSV import, etc.) was added speculatively. Pagination/sorting/filtering, while also listed as "bonus," are implemented because they're separately mandated by the core spec's Search/Filtering/Sorting sections.
+8. **Bonus features scoped to zero by default**, per your instruction — every core requirement in the PDF is implemented in full; apart from the backend test suite, nothing beyond it (Docker, CI, CSV import, etc.) was added speculatively. Pagination/sorting/filtering, while also listed as "bonus," are implemented because they're separately mandated by the core spec's Search/Filtering/Sorting sections.
 
 ## Assumptions
 
@@ -392,7 +419,7 @@ All validation errors return a consistent JSON envelope with a human-readable me
 
 Given more time, the next additions (in priority order) would be:
 
-1. **Automated test suite** — unit tests for each service-layer business rule (stage transitions, lead conversion, customer delete guard) and integration tests for the permission matrix per role.
+1. **Frontend test suite** — the backend is covered (see [Running the tests](#running-the-tests)); React components and API hooks are not yet.
 2. **Activity log** — a dedicated audit trail (who changed what, when) beyond the current `created_at`/`updated_at` timestamps.
 3. **Email reminders** for upcoming follow-ups.
 4. **CSV import** for bulk customer onboarding.

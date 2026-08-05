@@ -11,6 +11,11 @@ __pycache__/
 venv/
 env/
 
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
 # Django
 *.env
 .env
