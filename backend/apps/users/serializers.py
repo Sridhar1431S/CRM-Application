@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -11,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["name", "email", "password", "password_confirm", "role"]
+        fields = ["name", "email", "password", "password_confirm"]
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
@@ -21,12 +23,23 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs.get("password") != attrs.get("password_confirm"):
             raise serializers.ValidationError({"password_confirm": "Passwords do not match."})
+        try:
+            validate_password(attrs["password"])
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
         return attrs
 
     def create(self, validated_data):
         password = validated_data.pop("password")
         validated_data.pop("password_confirm")
-        return User.objects.create_user(email=validated_data.pop("email"), password=password, **validated_data)
+        # Role is never client-controlled on the public endpoint; elevating a
+        # user to Administrator is an admin-only operation.
+        return User.objects.create_user(
+            email=validated_data.pop("email"),
+            password=password,
+            role=User.Role.SALES_REP,
+            **validated_data,
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):

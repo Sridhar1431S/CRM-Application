@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 
 from apps.followups.urls import nested_urlpatterns as followup_nested_urlpatterns
 
@@ -12,8 +13,8 @@ schema_view = get_schema_view(
         default_version="v1",
         description="REST API for the CRM Lite take-home assignment (Tika).",
     ),
-    public=True,
-    permission_classes=[AllowAny],
+    public=False,
+    permission_classes=[IsAuthenticated],
 )
 
 urlpatterns = [
@@ -30,8 +31,11 @@ urlpatterns = [
     path("api/followups/", include("apps.followups.urls")),
     # Dashboard
     path("api/dashboard/", include("apps.dashboard.urls")),
-    # API docs
-    path("api/docs/swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),
-    path("api/docs/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
-    path("api/redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
+
+if settings.EXPOSE_API_DOCS:
+    urlpatterns += [
+        path("api/docs/swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),
+        path("api/docs/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+        path("api/redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    ]

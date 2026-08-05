@@ -1,7 +1,9 @@
+import os
 import random
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -17,14 +19,22 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if not settings.DEBUG and not os.getenv("ALLOW_DEMO_SEED"):
+            raise CommandError(
+                "Refusing to seed demo accounts outside DEBUG. Set ALLOW_DEMO_SEED=1 to override."
+            )
+
+        admin_password = os.getenv("DEMO_ADMIN_PASSWORD", "Admin@12345")
+        rep_password = os.getenv("DEMO_REP_PASSWORD", "Rep@12345")
+
         admin, created = User.objects.get_or_create(
             email="admin@crmlite.com",
             defaults={"name": "Alex Admin", "role": User.Role.ADMIN, "is_staff": True, "is_superuser": True},
         )
         if created:
-            admin.set_password("Admin@12345")
+            admin.set_password(admin_password)
             admin.save()
-            self.stdout.write(self.style.SUCCESS("Created admin: admin@crmlite.com / Admin@12345"))
+            self.stdout.write(self.style.SUCCESS("Created admin: admin@crmlite.com"))
 
         reps_data = [
             ("Priya Sharma", "priya@crmlite.com"),
@@ -37,10 +47,10 @@ class Command(BaseCommand):
                 email=email, defaults={"name": name, "role": User.Role.SALES_REP}
             )
             if created:
-                rep.set_password("Rep@12345")
+                rep.set_password(rep_password)
                 rep.save()
             reps.append(rep)
-        self.stdout.write(self.style.SUCCESS(f"Sales reps ready ({len(reps)}). Password: Rep@12345"))
+        self.stdout.write(self.style.SUCCESS(f"Sales reps ready ({len(reps)})."))
 
         industries = ["SaaS", "Manufacturing", "Retail", "Healthcare", "Finance", "Education"]
         statuses = [Customer.Status.PROSPECT, Customer.Status.ACTIVE, Customer.Status.INACTIVE]
