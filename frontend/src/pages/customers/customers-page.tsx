@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { customersApi } from "@/api/customers";
 import { Button } from "@/components/ui/button";
@@ -12,23 +12,17 @@ import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
+import { useListControls } from "@/lib/use-list-controls";
 import { useAuthStore } from "@/store/auth-store";
 import { CustomerFormDialog } from "@/pages/customers/customer-form-dialog";
 import type { Customer } from "@/types";
 
 export default function CustomersPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const { page, setPage, search, setSearch, debouncedSearch, ordering, setOrdering } = useListControls();
   const [status, setStatus] = useState("");
-  const [ordering, setOrdering] = useState("-created_at");
-  const debouncedSearch = useDebouncedValue(search);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -40,17 +34,12 @@ export default function CustomersPage() {
     placeholderData: (prev) => prev,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => customersApi.remove(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: "Customer deleted", variant: "success" });
-      setDeletingCustomer(null);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't delete customer", description: extractErrorMessage(error), variant: "error" });
-    },
+  const deleteMutation = useEntityMutation<unknown, string>({
+    mutationFn: (id) => customersApi.remove(id),
+    invalidateKeys: [["customers"], ["dashboard"]],
+    successTitle: "Customer deleted",
+    errorTitle: "Couldn't delete customer",
+    onSuccess: () => setDeletingCustomer(null),
   });
 
   const columns: DataTableColumn<Customer>[] = [
@@ -162,10 +151,7 @@ export default function CustomersPage() {
               rowKey={(c) => c.id}
               isLoading={isLoading}
               ordering={ordering}
-              onOrderingChange={(o) => {
-                setOrdering(o);
-                setPage(1);
-              }}
+              onOrderingChange={setOrdering}
             />
             {data && (
               <Pagination

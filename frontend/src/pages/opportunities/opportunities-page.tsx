@@ -13,7 +13,7 @@ import { Pagination } from "@/components/shared/pagination";
 import { SearchBar } from "@/components/shared/search-bar";
 import { FilterDrawer } from "@/components/shared/filter-drawer";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useDebouncedValue } from "@/lib/use-debounced-value";
+import { useListControls } from "@/lib/use-list-controls";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { OpportunityFormDialog } from "@/pages/opportunities/opportunity-form-dialog";
@@ -23,12 +23,9 @@ export default function OpportunitiesPage() {
   const isAdmin = useAuthStore((s) => s.user?.role === "admin");
   const navigate = useNavigate();
 
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const { page, setPage, search, setSearch, debouncedSearch, ordering, setOrdering } = useListControls();
   const [stage, setStage] = useState("");
   const [assignedRep, setAssignedRep] = useState("");
-  const [ordering, setOrdering] = useState("-created_at");
-  const debouncedSearch = useDebouncedValue(search);
   const [formOpen, setFormOpen] = useState(false);
 
   const { data: repsForFilter } = useQuery({
@@ -128,10 +125,7 @@ export default function OpportunitiesPage() {
               rowKey={(o) => o.id}
               isLoading={isLoading}
               ordering={ordering}
-              onOrderingChange={(o) => {
-                setOrdering(o);
-                setPage(1);
-              }}
+              onOrderingChange={setOrdering}
               onRowClick={(o) => navigate(`/opportunities/${o.id}`)}
             />
             {data && (

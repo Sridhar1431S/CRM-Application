@@ -2,24 +2,21 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { salesRepsApi } from "@/api/sales-reps";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityFormMutation } from "@/lib/use-entity-mutation";
+import { emailField, requiredField } from "@/lib/validation";
 import type { User } from "@/types";
 
-const createSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+const editSchema = z.object({
+  name: requiredField("Name"),
+  email: emailField,
 });
 
-const editSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+const createSchema = editSchema.extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 interface SalesRepFormDialogProps {
@@ -30,8 +27,6 @@ interface SalesRepFormDialogProps {
 
 export function SalesRepFormDialog({ open, onOpenChange, rep }: SalesRepFormDialogProps) {
   const isEdit = !!rep;
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const {
     register,
@@ -48,18 +43,15 @@ export function SalesRepFormDialog({ open, onOpenChange, rep }: SalesRepFormDial
     }
   }, [open, rep, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: { name: string; email: string; password?: string }) =>
-      isEdit ? salesRepsApi.update(rep!.id, data) : salesRepsApi.create(data as { name: string; email: string; password: string }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sales-reps"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: isEdit ? "Sales rep updated" : "Sales rep created", variant: "success" });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't save sales rep", description: extractErrorMessage(error), variant: "error" });
-    },
+  const mutation = useEntityFormMutation<{ name: string; email: string; password?: string }, User>({
+    isEdit,
+    entityLabel: "sales rep",
+    resourceKey: "sales-reps",
+    save: (data) =>
+      isEdit
+        ? salesRepsApi.update(rep!.id, data)
+        : salesRepsApi.create(data as { name: string; email: string; password: string }),
+    onSaved: () => onOpenChange(false),
   });
 
   return (

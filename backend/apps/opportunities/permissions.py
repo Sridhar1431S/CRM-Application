@@ -1,7 +1,7 @@
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from core.permissions import AssignedRepObjectPermissionMixin, RoleBasedPermission
 
 
-class OpportunityPermission(BasePermission):
+class OpportunityPermission(AssignedRepObjectPermissionMixin, RoleBasedPermission):
     """
     Administrators: full CRUD.
     Sales representatives: may view opportunities assigned to them
@@ -11,19 +11,10 @@ class OpportunityPermission(BasePermission):
     update opportunities" per the assignment spec).
     """
 
-    def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
-            return False
-        if getattr(view, "action", None) in {"create", "destroy"}:
-            return request.user.is_admin
-        return True
+    admin_only_actions = frozenset({"create", "destroy"})
 
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_admin:
-            return True
-        if request.method in SAFE_METHODS:
-            return obj.assigned_rep_id == request.user.id
-        if getattr(view, "action", None) == "update_stage":
-            return obj.assigned_rep_id == request.user.id
+    def has_write_object_permission(self, request, view, obj):
         # Sales reps cannot PUT/PATCH the full object directly, only via /stage.
-        return False
+        if getattr(view, "action", None) != "update_stage":
+            return False
+        return obj.assigned_rep_id == request.user.id

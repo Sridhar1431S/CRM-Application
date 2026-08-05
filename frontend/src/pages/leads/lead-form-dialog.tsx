@@ -2,23 +2,19 @@ import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { leadsApi } from "@/api/leads";
 import { Button } from "@/components/ui/button";
 import { Input, Label, FieldError, Select } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityFormMutation } from "@/lib/use-entity-mutation";
+import { emailField, phoneNumberField, requiredField } from "@/lib/validation";
 import type { Lead } from "@/types";
 
 const schema = z.object({
-  company_name: z.string().min(1, "Company name is required"),
-  contact_name: z.string().min(1, "Contact name is required"),
-  email: z.string().min(1, "Email is required").email("Enter a valid email address"),
-  phone_number: z
-    .string()
-    .min(7, "Enter a valid phone number")
-    .regex(/^\+?[0-9\s\-()]{7,20}$/, "Enter a valid phone number"),
+  company_name: requiredField("Company name"),
+  contact_name: requiredField("Contact name"),
+  email: emailField,
+  phone_number: phoneNumberField,
   source: z.string().optional(),
   priority: z.enum(["low", "medium", "high"]),
   status: z.enum(["new", "contacted", "qualified", "lost"]),
@@ -34,8 +30,6 @@ interface LeadFormDialogProps {
 
 export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps) {
   const isEdit = !!lead;
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const {
     register,
@@ -71,18 +65,12 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
     }
   }, [open, lead, reset]);
 
-  const mutation = useMutation({
-    mutationFn: (data: FormValues) =>
-      isEdit ? leadsApi.update(lead!.id, data) : leadsApi.create(data as Lead),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast({ title: isEdit ? "Lead updated" : "Lead created", variant: "success" });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't save lead", description: extractErrorMessage(error), variant: "error" });
-    },
+  const mutation = useEntityFormMutation<FormValues, Lead>({
+    isEdit,
+    entityLabel: "lead",
+    resourceKey: "leads",
+    save: (data) => (isEdit ? leadsApi.update(lead!.id, data) : leadsApi.create(data as Lead)),
+    onSaved: () => onOpenChange(false),
   });
 
   return (

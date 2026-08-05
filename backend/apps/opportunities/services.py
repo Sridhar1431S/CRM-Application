@@ -1,4 +1,5 @@
 from apps.opportunities.models import Opportunity
+from core.access import is_admin_or_assigned_rep
 from core.exceptions import BusinessRuleViolation
 
 TERMINAL_STAGES = {Opportunity.Stage.WON, Opportunity.Stage.LOST}
@@ -21,7 +22,7 @@ class OpportunityService:
 
     @staticmethod
     def update_stage(opportunity: Opportunity, new_stage: str, *, actor) -> Opportunity:
-        if not (actor.is_admin or opportunity.assigned_rep_id == actor.id):
+        if not is_admin_or_assigned_rep(actor, opportunity):
             raise BusinessRuleViolation("Only the assigned sales representative may update this opportunity.")
 
         if opportunity.stage in TERMINAL_STAGES and new_stage != opportunity.stage:

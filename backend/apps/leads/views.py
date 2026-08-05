@@ -1,5 +1,5 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from django.utils import timezone
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -8,10 +8,10 @@ from apps.leads.permissions import LeadPermission
 from apps.leads.serializers import LeadAssignSerializer, LeadSerializer
 from apps.leads.services import LeadService
 from apps.opportunities.serializers import OpportunitySerializer
-from core.pagination import StandardResultsSetPagination
+from core.views import BaseModelViewSet
 
 
-class LeadViewSet(viewsets.ModelViewSet):
+class LeadViewSet(BaseModelViewSet):
     """
     /api/leads/
 
@@ -23,8 +23,6 @@ class LeadViewSet(viewsets.ModelViewSet):
 
     serializer_class = LeadSerializer
     permission_classes = [LeadPermission]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["status", "priority", "assigned_rep"]
     search_fields = ["company_name", "contact_name", "email", "assigned_rep__name"]
     ordering_fields = ["company_name", "created_at", "priority", "status"]
@@ -32,14 +30,9 @@ class LeadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Lead.objects.filter(deleted_at__isnull=True).select_related("assigned_rep")
-        user = self.request.user
-        if user.is_authenticated and user.is_sales_rep:
-            return qs.filter(assigned_rep=user)
-        return qs
+        return self.scope_to_assigned_rep(qs)
 
     def perform_destroy(self, instance):
-        from django.utils import timezone
-
         instance.deleted_at = timezone.now()
         instance.save(update_fields=["deleted_at", "updated_at"])
 

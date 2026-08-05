@@ -8,13 +8,12 @@ from apps.followups.models import FollowUp
 from apps.followups.serializers import FollowUpSerializer
 from apps.followups.services import FollowUpService
 from apps.opportunities.models import Opportunity
+from core.access import scope_to_assigned_rep
 from core.pagination import StandardResultsSetPagination
 
 
 def _get_visible_opportunity(request, opportunity_id):
-    qs = Opportunity.objects.all()
-    if request.user.is_sales_rep:
-        qs = qs.filter(assigned_rep=request.user)
+    qs = scope_to_assigned_rep(Opportunity.objects.all(), request.user)
     try:
         return qs.get(pk=opportunity_id)
     except Opportunity.DoesNotExist:

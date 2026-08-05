@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { salesRepsApi } from "@/api/sales-reps";
 import { leadsApi } from "@/api/leads";
 import { Button } from "@/components/ui/button";
 import { Label, Select } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/toast";
-import { extractErrorMessage } from "@/lib/api-client";
+import { useEntityMutation } from "@/lib/use-entity-mutation";
 import type { Lead } from "@/types";
 
 export function LeadAssignDialog({
@@ -18,8 +17,6 @@ export function LeadAssignDialog({
   onOpenChange: (open: boolean) => void;
   lead: Lead | null;
 }) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   const [repId, setRepId] = useState("");
 
   const { data: reps } = useQuery({
@@ -28,16 +25,14 @@ export function LeadAssignDialog({
     enabled: open,
   });
 
-  const mutation = useMutation({
+  const mutation = useEntityMutation<Lead>({
     mutationFn: () => leadsApi.assign(lead!.id, repId),
+    invalidateKeys: [["leads"]],
+    successTitle: "Lead assigned",
+    errorTitle: "Couldn't assign lead",
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
-      toast({ title: "Lead assigned", variant: "success" });
       onOpenChange(false);
       setRepId("");
-    },
-    onError: (error) => {
-      toast({ title: "Couldn't assign lead", description: extractErrorMessage(error), variant: "error" });
     },
   });
 
